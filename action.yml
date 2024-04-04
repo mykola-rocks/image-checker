@@ -1,0 +1,35 @@
+name: 'Check Dockerfile FROM images'
+description: 'Compiles and runs a Go application to check Dockerfile FROM images against a list of allowed images.'
+inputs:
+  dockerfilePath:
+    description: 'Path to the Dockerfile to check.'
+    required: true
+    default: 'Dockerfile'
+  allowedImages:
+    description: 'Comma-separated list of prefixes and allowed images base urls.'
+    required: true
+    default: 'cgr.dev/chainguard'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        repository: 'mykola-rocks/image-checker'
+        ref: 'main'
+        path: 'image-checker'
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Build Dockerfile check application
+      run: go build -o imageChecker image-checker/src/imageChecker.go
+      shell: bash
+
+    - name: Run Dockerfile check
+      run: ./imageChecker ${{ inputs.dockerfilePath }}
+      shell: bash
+      env:
+        ALLOWED_IMAGES: ${{ inputs.allowedImages }}
